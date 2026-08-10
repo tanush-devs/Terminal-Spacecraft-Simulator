@@ -1,32 +1,27 @@
 import curses
 import time
 
-import app_state
+from app_state import AppState
+from input_handler import InputHandler
+from rendering import Renderer
 
-TARGET_FPS = 30
-FRAME_BUDGET = 1 / TARGET_FPS
-
-st_main = time.perf_counter()
-g1 = app_state.AppState()
 
 def main(stdscr):
     stdscr.nodelay(True)
-    width,height = stdscr.getmaxyx()
+    
+    renderer = Renderer(stdscr)
+    input_handler = InputHandler(stdscr)
+    appstate = AppState()
+    
+    FRAME_BUDGET = 1 / appstate.FPS
 
-    while True:
+    while appstate.is_running:
         start_time = time.perf_counter()
-        text = stdscr.getch() 
 
-        stdscr.clear()
-        stdscr.addstr(f"{width},{height}")
-        stdscr.addstr(f"\n Frames: {g1.frame}")
+        input_handler.poll_action(appstate)
+        renderer.draw_world(appstate)
 
-        if text == ord("q"):
-            return
-
-        stdscr.refresh()
-
-        g1.frame += 1
+        appstate.frame += 1
         end_time = time.perf_counter()
 
         total_time = end_time - start_time
@@ -35,9 +30,4 @@ def main(stdscr):
         if delay_needed > 0:
             time.sleep(delay_needed)
 
-
 curses.wrapper(main)
-
-end_main = time.perf_counter()
-Actual_fps = g1.frame / (end_main - st_main)
-print(f"Actual fps: {Actual_fps:.2f}")
