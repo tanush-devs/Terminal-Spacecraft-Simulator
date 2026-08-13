@@ -14,7 +14,7 @@ class item_map:
 
     TILE_MAP = {  # noqa: RUF012
         TILE_EMPTY: "  ",
-        TILE_STAR: " ^",
+        TILE_STAR: " █",
         TILE_ASTEROID: " ▀",
     }
 class ChunkManager:
@@ -55,9 +55,9 @@ class ChunkManager:
         for y in range(CHUNK_SIZE):
             for x in range(CHUNK_SIZE):
                 roll = rng.random()
-                if roll < 0.0005:
+                if roll < 1:
                     grid[y][x] = item_map.TILE_STAR  # star
-                elif roll < 1:
+                elif roll < 0.008:
                     grid[y][x] = item_map.TILE_ASTEROID  # Asteroid
         return grid
 
@@ -82,7 +82,7 @@ class ChunkManager:
 
         delta_cy = center_cy - self.last_cy
         delta_cx = center_cx - self.last_cx
-        
+
         if abs(delta_cx) > 1 or abs(delta_cy) > 1:
             # Trigger a full reload fallback instead of single-edge delta shifting
             self.last_cy = None
@@ -90,6 +90,9 @@ class ChunkManager:
             self.update_active_chunks(appstate, radius_y, radius_x)
             return
 
+        if delta_cx == 0 and delta_cy == 0:
+            return
+        
         if delta_cy == 1:
             self._load_row(max_cy, min_cx, max_cx)
 
@@ -101,6 +104,8 @@ class ChunkManager:
 
         elif delta_cx == -1:
             self._load_column(min_cx, min_cy, max_cy)
+            
+
 
 
     def _load_column(self, cx, min_cy, max_cy):
@@ -130,7 +135,9 @@ class ChunkManager:
         return item_map.TILE_EMPTY  # Default fallback if out of bounds
 
     def get_row_lis(self, cy, cx, line):
-        default_chunk = [[item_map.TILE_EMPTY] * CHUNK_SIZE for _ in range(CHUNK_SIZE)]
-        chunk = self.chunks.get((cy, cx), default_chunk)
+        # default_chunk = [[item_map.TILE_EMPTY] * CHUNK_SIZE for _ in range(CHUNK_SIZE)]
+        # chunk = self.chunks.get((cy, cx), default_chunk)
+        self._get_or_create_chunk(cy,cx)
+        chunk = self.chunks[(cy,cx)]
 
         return chunk[line]

@@ -19,7 +19,7 @@ class Renderer:
         pad_width = chunks_wide * CHUNK_SIZE * 2 # <--- multiplied by 2 for double-width tiles!
         
         self.viewport = curses.newpad(pad_height,pad_width)
-        self.telementary = curses.newwin(25, 20, 0, 0)
+        self.telementary = curses.newwin(30, 20, 0, 0)
 
     def render_world(self, appstate):
         COLOR_ROCKET = 1
@@ -42,7 +42,6 @@ class Renderer:
         chunk_mgr = appstate.chunk_manager
         tiles_wide = width // 2
         is_first_frame = chunk_mgr.last_cy is None or chunk_mgr.last_cx is None
-        print(is_first_frame)
         if is_first_frame:
             self.initialize_tlementary(appstate)
 
@@ -83,16 +82,33 @@ class Renderer:
         tmt.addstr(9, 2, "VELOCITY")
         tmt.addstr(11, 2, f"X : {round(rocket.vx,3): <5}")
         tmt.addstr(12, 2, f"Y : {round(-rocket.vy,3): <5}")
-        tmt.addstr(13, 2, f"<V> : {round(rocket.current_accelaration(),3): <5}")
+        tmt.addstr(13, 2, f"<V> : {round(rocket.current_speed(),3): <5}")
+        tmt.addstr(15, 2, "ACCELARATION")
+        tmt.addstr(17, 2, f"X : {round(rocket.ax,3): <5}")
+        tmt.addstr(18, 2, f"Y : {round(-rocket.ay,3): <5}")
+        tmt.addstr(19, 2, f"<A> : {round(rocket.current_accelaration(),3): <5}")
+        tmt.addstr(21, 2, f"THRUST : {round(rocket.thrust),3}")
+        chunk_y, chunk_x, *_ = appstate.chunk_manager.world_to_chunk_coords(rocket.y,rocket.x)
+        tmt.addstr(23, 2, f"CHUNK : ({chunk_x},{-chunk_y})")
         tmt.noutrefresh()
 
     def update_telementary(self,appstate):
         tmt = self.telementary
+        tmt.box()
         rocket = appstate.rocket
         tmt.addstr(6, 6, f"{round(rocket.x,3): <5}")
         tmt.addstr(7, 6, f"{round(-rocket.y,3): <5}")
 
         tmt.addstr(11, 6, f"{round(rocket.vx,3): <5}")
         tmt.addstr(12, 6, f"{round(-rocket.vy,3): <5}")
+        tmt.addstr(13, 8, f"{round(rocket.current_speed(),3): <5}")
+        
+        tmt.addstr(11, 6, f"{round(rocket.ax,3): <5}")
+        tmt.addstr(12, 6, f"{round(-rocket.ay,3): <5}")
         tmt.addstr(13, 8, f"{round(rocket.current_accelaration(),3): <5}")
+
+        tmt.addstr(21, 11, f"{round(rocket.thrust),3}")
+
+        chunk_y, chunk_x, *_ = appstate.chunk_manager.world_to_chunk_coords(rocket.y,rocket.x)
+        tmt.addstr(23, 10, f"({chunk_x},{-chunk_y})")
         tmt.noutrefresh()

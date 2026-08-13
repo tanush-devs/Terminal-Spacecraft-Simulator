@@ -29,14 +29,18 @@ def main(stdscr):
 
     FRAME_BUDGET = 1 / appstate.target_fps
     
-    appstate.rocket.vx = 32
-    appstate.rocket.vy = -32
+    appstate.rocket.vx = 16
+    appstate.rocket.vy = -16
 
 
     while appstate.is_running:
         start_time = time.perf_counter()
         inputhandler.poll_action(appstate)
 
+        if appstate.print_values:
+            renderer.camera.print_values(appstate)
+            appstate.print_values = False
+                    
         current_time = time.perf_counter()
         dt = current_time - prev_t
         prev_t = time.perf_counter()
@@ -45,7 +49,7 @@ def main(stdscr):
 
         renderer.render_world(appstate)
 
-        if appstate.rocket.x > 600:
+        if appstate.rocket.x > 100:
             etime = time.perf_counter()
             print(f"Total time: {etime - stime}")
             return

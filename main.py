@@ -31,12 +31,18 @@ def main(stdscr):
 
     FRAME_BUDGET = 1 / appstate.target_fps
     
-    appstate.rocket.vx = 32
-    appstate.rocket.vy = -32
+
 
     while appstate.is_running:
         start_time = time.perf_counter()
+
+        if appstate.print_values:
+            renderer.camera.print_values(appstate)
+
         inputhandler.poll_action(appstate)
+        
+        appstate.rocket.y += 32
+        appstate.rocket.x += 32
 
         dt = time.perf_counter() - last_calc
         last_calc = time.perf_counter()
