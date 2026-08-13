@@ -3,7 +3,7 @@ import time
 
 from appstate import AppState
 from input_handler import InputHandler
-from rendering import Renderer
+from rendering_trial import Renderer
 
 st_main = time.perf_counter()
 frame = 0
@@ -29,7 +29,8 @@ def main(stdscr):
 
     FRAME_BUDGET = 1 / appstate.target_fps
     
-    appstate.rocket.ax = 5
+    appstate.rocket.vx = 32
+    appstate.rocket.vy = -32
 
 
     while appstate.is_running:
@@ -41,7 +42,6 @@ def main(stdscr):
         prev_t = time.perf_counter()
 
         appstate.rocket.update_position(dt)
-
 
         renderer.render_world(appstate)
 

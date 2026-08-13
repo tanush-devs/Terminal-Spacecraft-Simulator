@@ -57,7 +57,7 @@ class ChunkManager:
                 roll = rng.random()
                 if roll < 0.0005:
                     grid[y][x] = item_map.TILE_STAR  # star
-                elif roll < 0.0010:
+                elif roll < 1:
                     grid[y][x] = item_map.TILE_ASTEROID  # Asteroid
         return grid
 
@@ -75,6 +75,9 @@ class ChunkManager:
             for cy in range(min_cy, max_cy + 1):
                 for cx in range(min_cx, max_cx + 1):
                     _ = self._get_or_create_chunk(cy, cx)
+                    
+            self.last_cy = center_cy
+            self.last_cx = center_cx
             return
 
         delta_cy = center_cy - self.last_cy

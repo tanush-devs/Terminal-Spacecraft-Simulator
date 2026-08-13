@@ -12,8 +12,8 @@ class Renderer:
         
     def initialize_rendering(self):
         height, width = self.stdscr.getmaxyx()
-        chunks_high = (height // CHUNK_SIZE) + 1
-        chunks_wide = (width // CHUNK_SIZE) + 1
+        chunks_high = (height // CHUNK_SIZE) + 2
+        chunks_wide = (width // CHUNK_SIZE) + 2
         
         pad_height = chunks_high * CHUNK_SIZE
         pad_width = chunks_wide * CHUNK_SIZE * 2 # <--- multiplied by 2 for double-width tiles!
@@ -31,15 +31,17 @@ class Renderer:
         height,width = self.stdscr.getmaxyx()
         self.camera.update_size(height, width)
 
+        chunk_mgr = appstate.chunk_manager
+        is_first_frame = chunk_mgr.last_cy is None or chunk_mgr.last_cx is None
+
+        
         radius_y = (height // CHUNK_SIZE) + 2
         radius_x = (width // CHUNK_SIZE) + 2
         appstate.chunk_manager.update_active_chunks(appstate, radius_y,radius_x)
-        chunk_mgr = appstate.chunk_manager
 
         py, px = appstate.rocket.position
         center_cy, center_cx, *_ = chunk_mgr.world_to_chunk_coords(py, px)
         
-        is_first_frame = chunk_mgr.last_cy is None or chunk_mgr.last_cx is None
         if not is_first_frame:
             delta_cy = center_cy - chunk_mgr.last_cy
             delta_cx = center_cx - chunk_mgr.last_cx
@@ -50,6 +52,7 @@ class Renderer:
             
 
         if is_first_frame or delta_cx != 0 or delta_cy != 0:
+            print(delta_cy,delta_cx)
             top_cy, top_cx, pad_height, chunks_wide = self.camera.get_pad_top_chunk(appstate)
 
             for index, y in enumerate(range(pad_height)):
@@ -66,11 +69,19 @@ class Renderer:
                     self.viewport.addstr(index, 0, row_str)
                 except curses.error:  
                     pass  # Ignores the harmless bottom-right overflow error
-            
+
             chunk_mgr.last_cy = center_cy
             chunk_mgr.last_cx = center_cx
 
+        self.stdscr.noutrefresh()
+
         self.stdscr.erase()
+
+        self.viewport.noutrefresh(
+        pad_offset_y - height * 2, pad_offset_x - width,
+        0, 0,
+        height - 1, width - 1
+        )
 
         self.stdscr.addstr(
             int(height // 1.5),
@@ -79,14 +90,11 @@ class Renderer:
             curses.color_pair(COLOR_ROCKET) | curses.A_BOLD,
         )
 
-        self.stdscr.move(0,0)
-        self.viewport.noutrefresh(
-        pad_offset_y, pad_offset_x,
-        0, 0,
-        height - 1, width - 1
-        )
-        self.initialize_tlementary(appstate)
-        self.stdscr.refresh()
+        self.telementary.touchwin()
+        self.update_telementary(appstate)
+        self.telementary.noutrefresh()
+
+        # 6. Flush everything to the display at once
         curses.doupdate()
         
     def initialize_tlementary(self, appstate):
@@ -101,17 +109,34 @@ class Renderer:
         tmt.addstr(9, 2, "VELOCITY")
         tmt.addstr(11, 2, f"X : {round(rocket.vx,3): <5}")
         tmt.addstr(12, 2, f"Y : {round(-rocket.vy,3): <5}")
-        tmt.addstr(13, 2, f"<V> : {round(rocket.current_accelaration(),3): <5}")
-        tmt.refresh()
+        tmt.addstr(13, 2, f"<V> : {round(rocket.current_speed(),3): <5}")
+        tmt.addstr(15, 2, "ACCELARATION")
+        tmt.addstr(17, 2, f"X : {round(rocket.ax,3): <5}")
+        tmt.addstr(18, 2, f"Y : {round(-rocket.ay,3): <5}")
+        tmt.addstr(19, 2, f"<A> : {round(rocket.current_accelaration(),3): <5}")
+        tmt.addstr(21, 2, f"THRUST : {round(rocket.thrust),3}")
+        chunk_y, chunk_x, *_ = appstate.chunk_manager.world_to_chunk_coords(rocket.y,rocket.x)
+        tmt.addstr(23, 2, f"CHUNK : ({chunk_x},{chunk_y})")
+        tmt.noutrefresh()
 
     def update_telementary(self,appstate):
         tmt = self.telementary
+        tmt.box()
         rocket = appstate.rocket
         tmt.addstr(6, 6, f"{round(rocket.x,3): <5}")
         tmt.addstr(7, 6, f"{round(-rocket.y,3): <5}")
 
         tmt.addstr(11, 6, f"{round(rocket.vx,3): <5}")
         tmt.addstr(12, 6, f"{round(-rocket.vy,3): <5}")
+        tmt.addstr(13, 8, f"{round(rocket.current_speed(),3): <5}")
+        
+        tmt.addstr(11, 6, f"{round(rocket.ax,3): <5}")
+        tmt.addstr(12, 6, f"{round(-rocket.ay,3): <5}")
         tmt.addstr(13, 8, f"{round(rocket.current_accelaration(),3): <5}")
-        tmt.refresh()
+
+        tmt.addstr(21, 11, f"{round(rocket.thrust),3}")
+
+        chunk_y, chunk_x, *_ = appstate.chunk_manager.world_to_chunk_coords(rocket.y,rocket.x)
+        tmt.addstr(23, 10, f"({chunk_x},{chunk_y})")
+        tmt.noutrefresh()
         

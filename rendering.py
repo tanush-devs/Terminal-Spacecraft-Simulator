@@ -41,6 +41,11 @@ class Renderer:
         
         chunk_mgr = appstate.chunk_manager
         tiles_wide = width // 2
+        is_first_frame = chunk_mgr.last_cy is None or chunk_mgr.last_cx is None
+        print(is_first_frame)
+        if is_first_frame:
+            self.initialize_tlementary(appstate)
+
         for index, y in enumerate(range(top_y,top_y + height)):
             row_lis = [item_map.TILE_MAP.get(chunk_mgr.get_tile(y, x), "  ")
                        for x in range(left_x,left_x + tiles_wide)
@@ -62,8 +67,9 @@ class Renderer:
         )
         
         self.stdscr.move(0,0)
-        self.stdscr.refresh()
+        self.stdscr.noutrefresh()
         self.initialize_tlementary(appstate)
+        curses.doupdate()
     
     def initialize_tlementary(self, appstate):
         tmt = self.telementary
@@ -78,7 +84,7 @@ class Renderer:
         tmt.addstr(11, 2, f"X : {round(rocket.vx,3): <5}")
         tmt.addstr(12, 2, f"Y : {round(-rocket.vy,3): <5}")
         tmt.addstr(13, 2, f"<V> : {round(rocket.current_accelaration(),3): <5}")
-        tmt.refresh()
+        tmt.noutrefresh()
 
     def update_telementary(self,appstate):
         tmt = self.telementary
@@ -89,4 +95,4 @@ class Renderer:
         tmt.addstr(11, 6, f"{round(rocket.vx,3): <5}")
         tmt.addstr(12, 6, f"{round(-rocket.vy,3): <5}")
         tmt.addstr(13, 8, f"{round(rocket.current_accelaration(),3): <5}")
-        tmt.refresh()
+        tmt.noutrefresh()
