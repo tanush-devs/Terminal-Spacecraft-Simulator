@@ -33,6 +33,8 @@ class Rocket:
         return (-self.y,self.x)
     
     def update_position(self , dt):
+        self.ay += self.thrust * dt
+        
         self.vx += self.ax * dt
         self.vy += self.ay * dt
 

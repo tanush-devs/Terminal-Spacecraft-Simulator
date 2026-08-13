@@ -13,7 +13,10 @@ class InputHandler:
 
         # With nodelay(True), -1 means NO key was pressed this frame
         if key == -1:
-            return
+            if appstate.rocket.thrust  < 0:
+                appstate.rocket.thrust += 0.4
+            else:
+                pass
         
         if key == curses.KEY_RESIZE or key == 410:
             curses.update_lines_cols()
@@ -27,3 +30,6 @@ class InputHandler:
         # Map keys to actions
         if key in (ord('q'), ord('Q')):
             appstate.is_running = False
+            
+        if key in (ord('w'), ord('W')):
+            appstate.rocket.thrust -= 0.8

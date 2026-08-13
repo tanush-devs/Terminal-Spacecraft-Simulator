@@ -75,11 +75,8 @@ class ChunkManager:
             for cy in range(min_cy, max_cy + 1):
                 for cx in range(min_cx, max_cx + 1):
                     _ = self._get_or_create_chunk(cy, cx)
-    
-            self.last_cy = center_cy
-            self.last_cx = center_cx
             return
-        
+
         delta_cy = center_cy - self.last_cy
         delta_cx = center_cx - self.last_cx
         
@@ -92,21 +89,17 @@ class ChunkManager:
 
         if delta_cy == 1:
             self._load_row(max_cy, min_cx, max_cx)
-            self._unload_row(min_cy - 1, min_cx, max_cx)
+
         elif delta_cy == -1:
             self._load_row(min_cy, min_cx, max_cx)
-            self._unload_row(max_cy + 1, min_cx, max_cx)
 
         if delta_cx == 1:
             self._load_column(max_cx, min_cy, max_cy)
-            self._unload_column(min_cx - 1, min_cy, max_cy)
+
         elif delta_cx == -1:
             self._load_column(min_cx, min_cy, max_cy)
-            self._unload_column(max_cx + 1, min_cy, max_cy)
-            
-        self.last_cy = center_cy
-        self.last_cx = center_cx
-    
+
+
     def _load_column(self, cx, min_cy, max_cy):
         for cy in range(min_cy, max_cy + 1):
             self._get_or_create_chunk(cx, cy)
@@ -133,3 +126,8 @@ class ChunkManager:
 
         return item_map.TILE_EMPTY  # Default fallback if out of bounds
 
+    def get_row_lis(self, cy, cx, line):
+        default_chunk = [[item_map.TILE_EMPTY] * CHUNK_SIZE for _ in range(CHUNK_SIZE)]
+        chunk = self.chunks.get((cy, cx), default_chunk)
+
+        return chunk[line]
