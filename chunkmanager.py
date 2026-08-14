@@ -1,7 +1,7 @@
 import math
 import random
 
-CHUNK_SIZE = 32
+CHUNK_SIZE = 16
 
 
 
@@ -14,7 +14,7 @@ class item_map:
 
     TILE_MAP = {  # noqa: RUF012
         TILE_EMPTY: "  ",
-        TILE_STAR: " █",
+        TILE_STAR: " *",
         TILE_ASTEROID: " ▀",
     }
 class ChunkManager:
@@ -48,16 +48,15 @@ class ChunkManager:
 
     def _generate_chunk(self, cy, cx):
         """Procedural star/asteroid generator per chunk."""
-
         rng = random.Random(hash((self.seed, cy, cx)))
 
         grid = [[item_map.TILE_EMPTY for _ in range(CHUNK_SIZE)] for _ in range(CHUNK_SIZE)]
         for y in range(CHUNK_SIZE):
             for x in range(CHUNK_SIZE):
                 roll = rng.random()
-                if roll < 1:
+                if roll < 0.0004:
                     grid[y][x] = item_map.TILE_STAR  # star
-                elif roll < 0.008:
+                elif roll < 0.0008:
                     grid[y][x] = item_map.TILE_ASTEROID  # Asteroid
         return grid
 
