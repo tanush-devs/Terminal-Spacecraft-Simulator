@@ -1,4 +1,5 @@
 import curses
+import time
 
 from camera import Camera
 from chunkmanager import CHUNK_SIZE, item_map
@@ -9,6 +10,10 @@ class Renderer:
         self.stdscr = stdscr
         height,width = stdscr.getmaxyx()
         self.camera = Camera(height,width)
+        self.lastRenderCy = None
+        self.lastRenderCx = None
+        self.last_time = time.perf_counter()
+
 
     def initialize_rendering(self):
         height, width = self.stdscr.getmaxyx()
@@ -20,37 +25,43 @@ class Renderer:
 
         self.viewport = curses.newpad(pad_height,pad_width)
         self.telementary = curses.newwin(25, 20, 0, 0)
+        self.overlay = curses.newwin(height, width, 0, 0)
+
+        
 
     def render_world(self, appstate):
+
         COLOR_ROCKET = 1
         curses.update_lines_cols()
 
-        pad_offset_y,pad_offset_x,screen_player_y,screen_player_x = self.camera.get_view_bounds(appstate,self)
 
         height,width = self.stdscr.getmaxyx()
         self.camera.update_size(height, width)
 
         chunk_mgr = appstate.chunk_manager
-        is_first_frame = chunk_mgr.last_cy is None or chunk_mgr.last_cx is None
+        is_first_frame = self.lastRenderCy is None or self.lastRenderCx is None
         
         py, px = appstate.rocket.position
-        center_cy, center_cx, *_ = chunk_mgr.world_to_chunk_coords(py, px)
-        
+        current_cy, current_cx, *_ = chunk_mgr.world_to_chunk_coords(py, px)
         if not is_first_frame:
-            delta_cy = center_cy - chunk_mgr.last_cy
-            delta_cx = center_cx - chunk_mgr.last_cx
+            delta_cy = current_cy - self.lastRenderCy
+            delta_cx = current_cx - self.lastRenderCy
         else:
             self.initialize_tlementary(appstate)
             delta_cy = 0
             delta_cx = 0
-            
+
         if is_first_frame or delta_cx != 0 or delta_cy != 0:
+            start = time.perf_counter()
+
+            chunk_mgr.update_active_chunks(current_cy,current_cx)
             top_cy, left_cx, pad_height, chunks_wide = self.camera.get_pad_top_chunk(appstate, self)
 
             for index, y in enumerate(range(pad_height)):
                 d_cy = y // CHUNK_SIZE
                 line = y % CHUNK_SIZE
-                row_lists = [chunk_mgr.get_row_lis(top_cy + d_cy, cx, line) for cx in range(left_cx, left_cx + chunks_wide + 1)]
+                row_lists = [chunk_mgr.get_row_lis(top_cy + d_cy, cx, line) for cx in range(left_cx, left_cx + chunks_wide)]
+
                 row_lis = [item_map.TILE_MAP.get(tile, "  ")
                         for lis in row_lists
                         for tile in lis
@@ -61,33 +72,43 @@ class Renderer:
                     self.viewport.addstr(index, 0, row_str)
                 except curses.error:  
                     pass  # Ignores the harmless bottom-right overflow error
-                
-                chunk_mgr.last_cy = center_cy
-                chunk_mgr.last_cx = center_cx
 
+            self.lastRenderCy = current_cy
+            self.lastRenderCx = current_cx
+
+            print(f"Time taken for pad rebuild: {time.perf_counter() - start}")
+            
+        
+
+        pad_offset_y,pad_offset_x,screen_player_y,screen_player_x = self.camera.get_view_bounds(appstate,self)
+        
         self.stdscr.erase()
-        self.stdscr.move(0,0)
+        self.overlay.erase()
 
         self.stdscr.noutrefresh()
+
         self.viewport.noutrefresh(
         pad_offset_y, pad_offset_x,
         0, 0,
         height - 1, width - 1
         )
-
-        self.stdscr.addstr(
+        
+        self.overlay.addstr(
             screen_player_y,
             screen_player_x,
             "▲ ",
             curses.color_pair(COLOR_ROCKET) | curses.A_BOLD,
         )
+        self.overlay.overlay(self.stdscr)
+        self.stdscr.noutrefresh()
 
-        self.telementary.touchwin()
+
         self.update_telementary(appstate)
-        self.stdscr.move(0,0)
 
+
+        self.stdscr.move(0,0)
         curses.doupdate()
-        
+
     def initialize_tlementary(self, appstate):
         tmt = self.telementary
         tmt.box()
@@ -121,9 +142,9 @@ class Renderer:
         tmt.addstr(12, 6, f"{round(-rocket.vy,3): <5}")
         tmt.addstr(13, 8, f"{round(rocket.current_speed(),3): <5}")
         
-        tmt.addstr(11, 6, f"{round(rocket.ax,3): <5}")
-        tmt.addstr(12, 6, f"{round(-rocket.ay,3): <5}")
-        tmt.addstr(13, 8, f"{round(rocket.current_accelaration(),3): <5}")
+        tmt.addstr(17, 6, f"{round(rocket.ax,3): <5}")
+        tmt.addstr(18, 6, f"{round(-rocket.ay,3): <5}")
+        tmt.addstr(19, 8, f"{round(rocket.current_accelaration(),3): <5}")
 
         tmt.addstr(21, 11, f"{round(rocket.thrust),3}")
 

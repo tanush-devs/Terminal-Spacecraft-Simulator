@@ -3,13 +3,14 @@ import time
 
 from appstate import AppState
 from input_handler import InputHandler
-from rendering import Renderer
+from rendering_old import Renderer
 
 st_main = time.perf_counter()
 frame = 0
 
 def main(stdscr):
     global frame
+    
 
     stime = time.perf_counter()
     prev_t = time.perf_counter()

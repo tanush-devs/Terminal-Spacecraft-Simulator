@@ -1,7 +1,8 @@
 import curses
+import time
 
 from camera import Camera
-from chunkmanager import CHUNK_SIZE, item_map
+from chunkmanager_old import CHUNK_SIZE, item_map
 
 
 class Renderer:
@@ -22,6 +23,7 @@ class Renderer:
         self.telementary = curses.newwin(30, 20, 0, 0)
 
     def render_world(self, appstate):
+        start = time.perf_counter()
         COLOR_ROCKET = 1
         curses.init_pair(COLOR_ROCKET, curses.COLOR_RED, curses.COLOR_BLACK)
 
@@ -30,7 +32,10 @@ class Renderer:
         self.stdscr.erase()
         
         player_y, player_x = appstate.rocket.position
-        top_y,left_x = self.camera.get_view_bounds(player_y, player_x)
+        height, width = self.stdscr.getmaxyx()
+        
+        top_y = int(player_y - height // 2)
+        left_x = int(player_x - width // 4)
         
         height,width = self.stdscr.getmaxyx()
         self.camera.update_size(height, width)  
@@ -69,6 +74,9 @@ class Renderer:
         self.stdscr.noutrefresh()
         self.initialize_tlementary(appstate)
         curses.doupdate()
+        
+        total_time = time.perf_counter() - start
+        print(f"Total time taken to build one pad: {total_time}")
     
     def initialize_tlementary(self, appstate):
         tmt = self.telementary
