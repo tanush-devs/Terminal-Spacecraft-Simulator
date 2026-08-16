@@ -3,8 +3,8 @@ import math
 
 class Rocket:
     def __init__(self):
-        self.x = 0
-        self.y = 0
+        self.x = 32
+        self.y = 32
         self.vx = 0
         self.vy = 0
         self.ax = 0
@@ -26,11 +26,8 @@ class Rocket:
     def current_speed(self):
         return math.hypot(self.vx, self.vy)
     
-    def current_accelaration(self):
+    def current_acceleration(self):
         return math.hypot(self.ax, self.ay)
-    
-    def get_display_position(self):
-        return (-self.y,self.x)
     
     def update_position(self , dt):
         self.ay += self.thrust * dt
@@ -40,4 +37,3 @@ class Rocket:
 
         self.x += self.vx * dt
         self.y += self.vy * dt
-        

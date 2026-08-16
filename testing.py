@@ -10,6 +10,8 @@ frame = 0
 
 def main(stdscr):
     global frame
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
 
     stime = time.perf_counter()
     prev_t = time.perf_counter()
@@ -24,18 +26,15 @@ def main(stdscr):
 
     appstate = AppState()
     inputhandler = InputHandler(stdscr)
-    renderer = Renderer(stdscr)
-    renderer.initialize_rendering()
+    renderer = Renderer()
+    renderer.initialize_rendering(stdscr)
 
     FRAME_BUDGET = 1 / appstate.target_fps
-    
-    appstate.rocket.vy = -32
-    appstate.rocket.vx = -32
-
+    appstate.rocket.vx = 8
 
     while appstate.is_running:
         start_time = time.perf_counter()
-        inputhandler.poll_action(appstate)
+        inputhandler.poll_action(appstate, renderer)
                     
         current_time = time.perf_counter()
         dt = current_time - prev_t

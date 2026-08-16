@@ -1,6 +1,5 @@
 import math
 import random
-import time
 
 CHUNK_SIZE = 32
 
@@ -11,12 +10,14 @@ class item_map:
     TILE_EMPTY = 0
     TILE_STAR = 1
     TILE_ASTEROID = 2
+    TILE_ADMIN = 999
 
 
     TILE_MAP = {  # noqa: RUF012
         TILE_EMPTY: "  ",
         TILE_STAR: " *",
         TILE_ASTEROID: " ▀",
+        TILE_ADMIN: " \u26A1"
     }
 class ChunkManager:
     RADIUS_Y = 10
@@ -91,22 +92,19 @@ class ChunkManager:
         item_map.TILE_MAP[f"tile_{cx}"] = str(cx)
         return grid
 
-    def update_active_chunks(self,current_cy,current_cx):
-        
+    def unload_inactive_chunks(self,current_cy,current_cx):
         if self.last_cleanup_cy is None or self.last_cleanup_cx is None:
-            update_pad_status = True
+            unload_chunks = True
         else:
-            update_pad_status = (abs(current_cy - self.last_cleanup_cy) >= self.CLEANUP_INTERVAL or abs(current_cx - self.last_cleanup_cx) >= self.CLEANUP_INTERVAL)
-        
-        if update_pad_status:
-            start = time.perf_counter()
+            unload_chunks = (abs(current_cy - self.last_cleanup_cy) >= self.CLEANUP_INTERVAL or abs(current_cx - self.last_cleanup_cx) >= self.CLEANUP_INTERVAL)
+
+        if unload_chunks:
             min_cy = current_cy - self.RADIUS_Y
             max_cy = current_cy + self.RADIUS_Y
             min_cx = current_cx - self.RADIUS_X
             max_cx = current_cx + self.RADIUS_X
 
             loaded_chunks = {(cy, cx) for cy in range(min_cy, max_cy + 1) for cx in range(min_cx, max_cx + 1)}
-
             to_remove = [key for key in self.chunks if key not in loaded_chunks]
 
             for key in to_remove:
@@ -115,24 +113,21 @@ class ChunkManager:
             self.last_cleanup_cy = current_cy
             self.last_cleanup_cx = current_cx
 
-
     def get_tile(self, world_y, world_x):
         cy, cx, ly, lx = self.world_to_chunk_coords(world_y, world_x)
+        chunk = self._get_or_create_chunk(cy,cx)
 
-        chunk = self.chunks.get((cy, cx))
-
-        if chunk is not None:
-            return chunk[ly][lx]  # Returns integer ID (0, 1, 2, etc.)
-
-        return item_map.TILE_EMPTY  # Default fallback if out of bounds
+        return chunk[ly][lx]
     
+    def get_row_list(self, cy, cx, line):
+        if not 0 <= line < CHUNK_SIZE:
+            raise ValueError(f"line must be in range 0..{CHUNK_SIZE - 1}, got {line}")
 
-    def get_row_lis(self, cy, cx, line):
         chunk = self._get_or_create_chunk(cy,cx)
 
         return chunk[line]
     
-    def get_row_lis_testing(self, cy, cx, line):
+    def get_row_list_testing(self, cy, cx, line):
         chunk = self._get_or_create_testing_chunk(cy,cx)
 
         return chunk[line]
