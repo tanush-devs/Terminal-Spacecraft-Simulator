@@ -12,6 +12,7 @@ def main(stdscr):
     global frame
     curses.start_color()
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
     stime = time.perf_counter()
     prev_t = time.perf_counter()
@@ -27,7 +28,7 @@ def main(stdscr):
     appstate = AppState()
     inputhandler = InputHandler(stdscr)
     renderer = Renderer()
-    renderer.initialize_rendering(stdscr)
+    renderer.initialize_rendering(stdscr,appstate)
 
     FRAME_BUDGET = 1 / appstate.target_fps
     appstate.rocket.vx = 8

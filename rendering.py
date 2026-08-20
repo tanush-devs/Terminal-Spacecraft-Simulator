@@ -1,7 +1,9 @@
 import curses
+import time
 
 from camera import Camera
 from chunkmanager import CHUNK_SIZE, item_map
+from telementary import Telementary
 
 
 class Renderer:
@@ -11,12 +13,13 @@ class Renderer:
         self.pad_h = None
         self.pad_w = None
         self.camera = Camera()
+        self.telementary = Telementary()
         self.lastRenderCy = None
         self.lastRenderCx = None
         self.reprint_pad = True
 
 
-    def initialize_rendering(self,stdscr):
+    def initialize_rendering(self,stdscr,appstate):
         self.stdscr = stdscr
         height,width = stdscr.getmaxyx()
         self.screen_h = height
@@ -32,9 +35,14 @@ class Renderer:
         self.pad_w = pad_width
 
         self.viewport = curses.newpad(pad_height,pad_width)
-        self.telementary = curses.newwin(25, 20, 0, 0)
+
+        tele_width = min(30,width)
+        tele_height = len(self.telementary.get_display_list(appstate,tele_width)) + 2
+        self.tele = curses.newpad(tele_height, tele_width)
+        self.telementary.max_offset = max(0, tele_height - height)
+
         self.overlay = curses.newwin(height, width, 0, 0)
-        
+
     def resize_rendering(self,appstate):
         height, width = self.stdscr.getmaxyx()
 
@@ -48,12 +56,17 @@ class Renderer:
         pad_width = chunks_wide * CHUNK_SIZE * 2
 
         self.viewport.resize(pad_height, pad_width)
-        self.telementary.resize(25, 20)
+
+        tele_width = min(30,width)
+        tele_height = len(self.telementary.get_display_list(appstate,tele_width)) + 2
+        self.tele.clear()
+        self.tele.resize(tele_height, tele_width)
+        self.telementary.max_offset = max(0, tele_height - height)
+
         self.overlay.resize(height, width)
-        
+
         self.render_world(appstate)
 
-        
 
     def render_world(self, appstate):
 
@@ -70,7 +83,6 @@ class Renderer:
             delta_cx = current_cx - self.lastRenderCx
             self.reprint_pad = delta_cx != 0 or delta_cy != 0
         else:
-            self.initialize_tlementary(appstate)
             self.reprint_pad = True
 
         if self.reprint_pad:
@@ -80,7 +92,7 @@ class Renderer:
             for index, y in enumerate(range(pad_height)):
                 d_cy = y // CHUNK_SIZE
                 line = y % CHUNK_SIZE
-                row_lists = [chunk_mgr.get_row_list_testing(top_cy + d_cy, cx, line) for cx in range(left_cx, left_cx + chunks_wide)]
+                row_lists = [chunk_mgr.get_row_list(top_cy + d_cy, cx, line) for cx in range(left_cx, left_cx + chunks_wide)]
 
                 row_lis = [item_map.TILE_MAP.get(tile, "  ")
                         for lis in row_lists
@@ -99,7 +111,7 @@ class Renderer:
             self.reprint_pad = False    
 
         pad_offset_y,pad_offset_x,screen_player_y,screen_player_x = self.camera.get_view_bounds(appstate,self)
-        
+
         self.stdscr.erase()
         self.overlay.erase()
 
@@ -120,52 +132,22 @@ class Renderer:
         self.overlay.overlay(self.stdscr)
         self.stdscr.noutrefresh()
 
-
-        self.update_telementary(appstate)
-
+        self.update_tele(appstate)
 
         self.stdscr.move(0,0)
         curses.doupdate()
 
-    def initialize_tlementary(self, appstate):
-        tmt = self.telementary
+
+    def update_tele(self,appstate):
+        tmt = self.tele
+        height,width = tmt.getmaxyx()
         tmt.box()
-        tmt.addstr(1, 5, "◈ TELEMETRY")
-        tmt.addstr(3, 1, "─"*18)
-        rocket = appstate.rocket
-        tmt.addstr(5, 2, "POSITION")
-        tmt.addstr(6, 2, f"X : {round(rocket.x,3): <5}")
-        tmt.addstr(7, 2, f"Y : {round(-rocket.y,3): <5}")
-        tmt.addstr(9, 2, "VELOCITY")
-        tmt.addstr(11, 2, f"X : {round(rocket.vx,3): <5}")
-        tmt.addstr(12, 2, f"Y : {round(-rocket.vy,3): <5}")
-        tmt.addstr(13, 2, f"<V> : {round(rocket.current_speed(),3): <5}")
-        tmt.addstr(15, 2, "ACCELARATION")
-        tmt.addstr(17, 2, f"X : {round(rocket.ax,3): <5}")
-        tmt.addstr(18, 2, f"Y : {round(-rocket.ay,3): <5}")
-        tmt.addstr(19, 2, f"<A> : {round(rocket.current_acceleration(),3): <5}")
-        tmt.addstr(21, 2, f"THRUST : {round(rocket.thrust,3)}")
-        chunk_y, chunk_x, *_ = appstate.chunk_manager.world_to_chunk_coords(rocket.y,rocket.x)
-        tmt.addstr(23, 2, f"CHUNK : ({chunk_x},{-chunk_y})")
-        tmt.noutrefresh()
+        lis = self.telementary.get_display_list(appstate,width)
+        for index,line in enumerate(lis):
+            tmt.addstr(index+1,1, line)
 
-    def update_telementary(self,appstate):
-        tmt = self.telementary
-        tmt.box()
-        rocket = appstate.rocket
-        tmt.addstr(6, 6, f"{round(rocket.x,3): <5}")
-        tmt.addstr(7, 6, f"{round(-rocket.y,3): <5}")
-
-        tmt.addstr(11, 6, f"{round(rocket.vx,3): <5}")
-        tmt.addstr(12, 6, f"{round(-rocket.vy,3): <5}")
-        tmt.addstr(13, 8, f"{round(rocket.current_speed(),3): <5}")
-        
-        tmt.addstr(17, 6, f"{round(rocket.ax,3): <5}")
-        tmt.addstr(18, 6, f"{round(-rocket.ay,3): <5}")
-        tmt.addstr(19, 8, f"{round(rocket.current_acceleration(),3): <5}")
-
-        tmt.addstr(21, 11, f"{round(rocket.thrust,3)}")
-
-        chunk_y, chunk_x, *_ = appstate.chunk_manager.world_to_chunk_coords(rocket.y,rocket.x)
-        tmt.addstr(23, 10, f"({chunk_x},{-chunk_y})")
-        tmt.noutrefresh()
+        tmt.noutrefresh(
+        self.telementary.scroll_offset, 0,
+        0, 0,
+        min(height,self.screen_h - 1), min(30,width)
+        )

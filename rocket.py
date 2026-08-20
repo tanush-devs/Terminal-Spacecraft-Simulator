@@ -14,7 +14,7 @@ class Rocket:
         self.thrust = 0
         self.max_thrust = 0
         self.emoji = "▲ "
-        
+
     @property
     def position(self):
         return (self.y,self.x)
