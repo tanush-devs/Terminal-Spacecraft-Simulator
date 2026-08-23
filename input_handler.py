@@ -1,19 +1,20 @@
-from pynput import keyboard
-import os
+from pynput import keyboard, mouse
+
 
 class InputHandler:
-    def __init__(self, appstate):
+    def __init__(self, renderer):
         self.game_is_running = True
         self.rotate_right = False
         self.rotate_left = False
         self.thrust_increase = False
         self.thrust_decrease = False
-        self.counter_thrust = False
-        self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
+        self.keyboard_listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
+        self.mouse_listener = mouse.Listener(on_scroll= renderer.telementary.scroll)
         
 
     def poll_action(self):
-        self.listener.start()
+        self.mouse_listener.start()
+        self.keyboard_listener.start()
 
 
     def on_press(self,key):
@@ -22,9 +23,6 @@ class InputHandler:
 
         if getattr(key, 'char', None) in ['s','S']:
             self.thrust_decrease = True
-
-        if getattr(key, 'char', None) in ['x','X']:
-            self.counter_thrust = True
 
         if getattr(key, 'char', None) in ['a','A']:
             self.rotate_left = True
@@ -43,9 +41,6 @@ class InputHandler:
         if getattr(key, 'char', None) in ['s','S']:
             self.thrust_decrease = False
 
-        if getattr(key, 'char', None) in ['x','X']:
-            self.counter_thrust = False
-
         if getattr(key, 'char', None) in ['a','A']:
             self.rotate_left = False
 
@@ -53,4 +48,4 @@ class InputHandler:
             self.rotate_right = False
 
         if key == keyboard.Key.esc:
-            os._exit(0)
+            self.game_is_running = False

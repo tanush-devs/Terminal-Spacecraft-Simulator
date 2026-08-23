@@ -5,6 +5,8 @@ from appstate import AppState
 from input_handler import InputHandler
 from rendering import Renderer
 
+st_main = time.perf_counter()
+frame = 0
 
 def main(stdscr):
     global frame
@@ -12,6 +14,7 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
+    # stime = time.perf_counter()
     prev_t = time.perf_counter()
 
     height, width = stdscr.getmaxyx()
@@ -23,8 +26,8 @@ def main(stdscr):
         pass
 
     appstate = AppState()
-    inputhandler = InputHandler(appstate)
     renderer = Renderer()
+    inputhandler = InputHandler(renderer)
     renderer.initialize_rendering(stdscr,appstate)
 
     FRAME_BUDGET = 1 / appstate.target_fps
@@ -50,3 +53,7 @@ def main(stdscr):
             time.sleep(delay_needed)
 
 curses.wrapper(main)
+
+end_main = time.perf_counter()
+Actual_fps = frame / (end_main - st_main)
+print(f"Actual fps: {Actual_fps:.2f}")

@@ -56,10 +56,11 @@ class Telementary:
             for field,value in fields.items():
                 display_list.append(f"    {field}: {value}")            
             display_list.append("")
+            
         return display_list
 
-    def scroll(self, delta):
+    def scroll(self, x, y, dx, dy):
         self.scroll_offset = max(
             0,
-            min(self.scroll_offset + delta, self.max_offset)
+            min(self.scroll_offset - dy, self.max_offset)
         )

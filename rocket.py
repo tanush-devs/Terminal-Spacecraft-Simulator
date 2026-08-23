@@ -79,7 +79,7 @@ class Rocket:
         self.update_rocket_emoji()
 
     def update_rocket_emoji(self):
-        if (15*math.pi / 8) < self.angle < (math.pi / 8) :
+        if (15*math.pi / 8) < self.angle or self.angle < (math.pi / 8) :
             self.emoji = EmojiDictionary.ROCKET_FACING_NORTH
 
         elif (math.pi / 8) < self.angle < (3*math.pi / 8):

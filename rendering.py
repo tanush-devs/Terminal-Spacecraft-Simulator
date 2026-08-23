@@ -64,7 +64,7 @@ class Renderer:
 
         self.overlay.resize(height, width)
 
-        self.render_world(appstate)
+        self.reprint_pad = True
 
 
     def render_world(self, appstate):
@@ -74,10 +74,10 @@ class Renderer:
 
 
         chunk_mgr = appstate.chunk_manager
-        py, px = appstate.rocket.x , appstate.rocket.y
+        py, px = appstate.rocket.y , appstate.rocket.x
         current_cy, current_cx, *_ = chunk_mgr.world_to_chunk_coords(py, px)
 
-        self.process_resize()
+        self.process_resize(appstate)
 
         if not (self.lastRenderCy is None or self.lastRenderCx is None):
             delta_cy = current_cy - self.lastRenderCy
@@ -153,8 +153,8 @@ class Renderer:
         min(height,self.screen_h - 1), min(30,width)
         )
 
-    def process_resize(self):
+    def process_resize(self, appstate):
         new_h,new_w = self.stdscr.getmaxyx()
-        
+
         if new_h != self.screen_h or new_w != self.screen_w:
-            self.resize_renderer()
+            self.resize_renderer(appstate)
