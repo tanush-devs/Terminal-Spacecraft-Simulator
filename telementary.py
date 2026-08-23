@@ -1,3 +1,6 @@
+import math
+
+
 LINES_TO_SCROLL = 1
 
 class Telementary:
@@ -24,18 +27,24 @@ class Telementary:
         "VELOCITY": {
             "X": round(rocket.vx, 3),
             "Y": round(-rocket.vy, 3),
-            "SPEED": round(rocket.current_speed(), 3),
+            "Speed": round(rocket.current_speed(), 3),
         },
 
         "ACCELERATION": {
             "X": round(rocket.ax, 3),
             "Y": round(-rocket.ay, 3),
-            "MAGNITUDE": round(rocket.current_acceleration(), 3),
+            "Magnitude": round(rocket.current_acceleration(), 3),
+        },
+        "ORIENTATION":{
+            "Angle": round(math.degrees(rocket.angle), 2),
+            "Angular":"",
+            "  Velocity": round(math.degrees(rocket.angular_velocity), 2),
+            "  Accelaration": round(math.degrees(rocket.angular_acceleration), 2),
         },
 
         "GENERAL": {
-            "THRUST": round(rocket.thrust, 3),
-            "CHUNK": (chunk_x, -chunk_y),
+            "Thrust": round(rocket.thrust, 3),
+            "Chunk": (chunk_x, -chunk_y),
         },
     }
 
@@ -45,7 +54,7 @@ class Telementary:
         for section,fields in data.items():
             display_list.append(section)
             for field,value in fields.items():
-                display_list.append(f"\t{field}: {value}")            
+                display_list.append(f"    {field}: {value}")            
             display_list.append("")
         return display_list
 

@@ -18,7 +18,6 @@ class Renderer:
         self.lastRenderCx = None
         self.reprint_pad = True
 
-
     def initialize_rendering(self,stdscr,appstate):
         self.stdscr = stdscr
         height,width = stdscr.getmaxyx()
@@ -26,8 +25,8 @@ class Renderer:
         self.screen_w = width
 
         height, width = self.stdscr.getmaxyx()
-        chunks_high = (height // CHUNK_SIZE) + 2
-        chunks_wide = (width // (CHUNK_SIZE * 2)) + 2
+        chunks_high = (height // CHUNK_SIZE) + 3
+        chunks_wide = (width // (CHUNK_SIZE * 2)) + 3
 
         pad_height = chunks_high * CHUNK_SIZE
         pad_width = chunks_wide * CHUNK_SIZE * 2 # <--- multiplied by 2 for double-width tiles!
@@ -43,14 +42,14 @@ class Renderer:
 
         self.overlay = curses.newwin(height, width, 0, 0)
 
-    def resize_rendering(self,appstate):
+    def resize_renderer(self,appstate):
         height, width = self.stdscr.getmaxyx()
 
         self.screen_h = height
         self.screen_w = width
 
-        chunks_high = (height // CHUNK_SIZE) + 2
-        chunks_wide = (width // (CHUNK_SIZE * 2)) + 2
+        chunks_high = (height // CHUNK_SIZE) + 3
+        chunks_wide = (width // (CHUNK_SIZE * 2)) + 3
 
         pad_height = chunks_high * CHUNK_SIZE
         pad_width = chunks_wide * CHUNK_SIZE * 2
@@ -75,8 +74,10 @@ class Renderer:
 
 
         chunk_mgr = appstate.chunk_manager
-        py, px = appstate.rocket.position
+        py, px = appstate.rocket.x , appstate.rocket.y
         current_cy, current_cx, *_ = chunk_mgr.world_to_chunk_coords(py, px)
+
+        self.process_resize()
 
         if not (self.lastRenderCy is None or self.lastRenderCx is None):
             delta_cy = current_cy - self.lastRenderCy
@@ -131,16 +132,16 @@ class Renderer:
         )
         self.overlay.overlay(self.stdscr)
         self.stdscr.noutrefresh()
-
         self.update_tele(appstate)
 
-        self.stdscr.move(0,0)
         curses.doupdate()
+
 
 
     def update_tele(self,appstate):
         tmt = self.tele
         height,width = tmt.getmaxyx()
+        tmt.erase()
         tmt.box()
         lis = self.telementary.get_display_list(appstate,width)
         for index,line in enumerate(lis):
@@ -151,3 +152,9 @@ class Renderer:
         0, 0,
         min(height,self.screen_h - 1), min(30,width)
         )
+
+    def process_resize(self):
+        new_h,new_w = self.stdscr.getmaxyx()
+        
+        if new_h != self.screen_h or new_w != self.screen_w:
+            self.resize_renderer()

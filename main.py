@@ -7,31 +7,41 @@ from rendering import Renderer
 
 
 def main(stdscr):
+    global frame
     curses.start_color()
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
     prev_t = time.perf_counter()
 
+    height, width = stdscr.getmaxyx()
+    try:
+        curses.resize_term(height, width)
+        stdscr.resize(height, width)
+        curses.update_lines_cols()
+    except Exception:  # noqa: BLE001, S110
+        pass
 
     appstate = AppState()
-    inputhandler = InputHandler(stdscr)
+    inputhandler = InputHandler(appstate)
     renderer = Renderer()
-    renderer.initialize_rendering(stdscr)
+    renderer.initialize_rendering(stdscr,appstate)
 
     FRAME_BUDGET = 1 / appstate.target_fps
-    
-    while appstate.is_running:
+    inputhandler.poll_action()
+
+    while inputhandler.game_is_running:
         start_time = time.perf_counter()
 
-        inputhandler.poll_action(appstate,renderer)
+        current_time = time.perf_counter()
+        dt = current_time - prev_t
+        prev_t = current_time
 
-        dt = min(time.perf_counter() - prev_t, 0.06)
-        prev_t = time.perf_counter()
-
-        appstate.rocket.update_position(dt)
+        appstate.rocket.update_physics(dt, inputhandler)
 
         renderer.render_world(appstate)
 
+        frame += 1
         end_time = time.perf_counter()
         total_time = end_time - start_time
         delay_needed = FRAME_BUDGET - total_time

@@ -1,28 +1,56 @@
-import curses
-
+from pynput import keyboard
+import os
 
 class InputHandler:
-    def __init__(self, stdscr):
-        self.stdscr = stdscr
-        self.stdscr.nodelay(True)
-        stdscr.keypad(True)
+    def __init__(self, appstate):
+        self.game_is_running = True
+        self.rotate_right = False
+        self.rotate_left = False
+        self.thrust_increase = False
+        self.thrust_decrease = False
+        self.counter_thrust = False
+        self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
+        
 
-    def poll_action(self,appstate,renderer):
-        """Non-blocking input check. Returns an action or None."""
-        key = self.stdscr.getch()
+    def poll_action(self):
+        self.listener.start()
 
-        if key == curses.KEY_MOUSE:
-            _, x, y, _, button_state = curses.getmouse()
 
-            if button_state & curses.BUTTON4_PRESSED:
-                renderer.telementary.scroll(-1)
+    def on_press(self,key):
+        if getattr(key, 'char', None) in ['w','W']:
+            self.thrust_increase = True
 
-            elif button_state & curses.BUTTON5_PRESSED:
-                renderer.telementary.scroll(+1)
+        if getattr(key, 'char', None) in ['s','S']:
+            self.thrust_decrease = True
 
-        elif key == curses.KEY_RESIZE or key == 410:
-            renderer.resize_rendering(appstate)
+        if getattr(key, 'char', None) in ['x','X']:
+            self.counter_thrust = True
 
-        elif key in (ord('q'), ord('Q')):
-            appstate.is_running = False
+        if getattr(key, 'char', None) in ['a','A']:
+            self.rotate_left = True
 
+        if getattr(key, 'char', None) in ['d','D']:
+            self.rotate_right = True
+
+
+        if key == keyboard.Key.esc:
+            self.game_is_running = False
+
+    def on_release(self,key):
+        if getattr(key, 'char', None) in ['w','W']:
+            self.thrust_increase = False
+
+        if getattr(key, 'char', None) in ['s','S']:
+            self.thrust_decrease = False
+
+        if getattr(key, 'char', None) in ['x','X']:
+            self.counter_thrust = False
+
+        if getattr(key, 'char', None) in ['a','A']:
+            self.rotate_left = False
+
+        if getattr(key, 'char', None) in ['d','D']:
+            self.rotate_right = False
+
+        if key == keyboard.Key.esc:
+            os._exit(0)

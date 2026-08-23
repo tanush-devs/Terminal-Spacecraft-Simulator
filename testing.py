@@ -14,7 +14,7 @@ def main(stdscr):
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
-    stime = time.perf_counter()
+    # stime = time.perf_counter()
     prev_t = time.perf_counter()
 
     height, width = stdscr.getmaxyx()
@@ -26,29 +26,23 @@ def main(stdscr):
         pass
 
     appstate = AppState()
-    inputhandler = InputHandler(stdscr)
+    inputhandler = InputHandler(appstate)
     renderer = Renderer()
     renderer.initialize_rendering(stdscr,appstate)
 
     FRAME_BUDGET = 1 / appstate.target_fps
-    appstate.rocket.vx = 8
+    inputhandler.poll_action()
 
-    while appstate.is_running:
+    while inputhandler.game_is_running:
         start_time = time.perf_counter()
-        inputhandler.poll_action(appstate, renderer)
-                    
+
         current_time = time.perf_counter()
         dt = current_time - prev_t
-        prev_t = time.perf_counter()
+        prev_t = current_time
 
-        appstate.rocket.update_position(dt)
+        appstate.rocket.update_physics(dt, inputhandler)
 
         renderer.render_world(appstate)
-
-        if appstate.rocket.x > 2000:
-            etime = time.perf_counter()
-            print(f"Total time: {etime - stime}")
-            return
 
         frame += 1
         end_time = time.perf_counter()
