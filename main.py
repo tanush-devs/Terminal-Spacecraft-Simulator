@@ -1,8 +1,11 @@
 import curses
+import random
 import time
 
 from appstate import AppState
+from colors import Colours
 from input_handler import InputHandler
+from particles import ParticleSystem
 from rendering import Renderer
 
 st_main = time.perf_counter()
@@ -11,7 +14,6 @@ frame = 0
 def main(stdscr):
     global frame
     curses.start_color()
-    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
 
     # stime = time.perf_counter()
@@ -26,23 +28,31 @@ def main(stdscr):
         pass
 
     appstate = AppState()
+    particle_system = ParticleSystem()
     renderer = Renderer()
     inputhandler = InputHandler(renderer)
+    color_manager = Colours()
+    
     renderer.initialize_rendering(stdscr,appstate)
+    color_manager.initialize(stdscr)
+    
 
     FRAME_BUDGET = 1 / appstate.target_fps
     inputhandler.poll_action()
 
     while inputhandler.game_is_running:
+
         start_time = time.perf_counter()
 
         current_time = time.perf_counter()
         dt = current_time - prev_t
         prev_t = current_time
 
-        appstate.rocket.update_physics(dt, inputhandler)
+        appstate.rocket.update_physics(dt, inputhandler, particle_system)
+        appstate.rocket.emit_exhaust(particle_system, dt, color_manager)
+        particle_system.update(dt)
 
-        renderer.render_world(appstate)
+        renderer.render_world(appstate, particle_system, color_manager)
 
         frame += 1
         end_time = time.perf_counter()
@@ -51,6 +61,7 @@ def main(stdscr):
 
         if delay_needed > 0:
             time.sleep(delay_needed)
+        
 
 curses.wrapper(main)
 

@@ -1,6 +1,5 @@
 import math
 
-
 LINES_TO_SCROLL = 1
 
 class Telementary:

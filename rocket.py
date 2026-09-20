@@ -12,6 +12,8 @@ class EmojiDictionary:
     ROCKET_FACING_NORTH_WEST = "↖ "
 
 
+
+
 class Rocket:
 
     def __init__(self):
@@ -29,11 +31,15 @@ class Rocket:
         self.max_angular_velocity = 1
         self.angular_acceleration = 0
 
-        self.thrust = 0
+        self.thrust = 100
         self.Thrust_Buildup_Rate = 1
         self.Counter_Thrust_Buildup_Rate = 1
         self.max_thrust = 5
         self.max_counter_thrust = -3
+        
+        self.exhaust_rate = 30
+        self.exhaust_particle_accumulator = 0
+        self.exhaust_lifetime = 1
 
         self.emoji = EmojiDictionary.ROCKET_FACING_NORTH
 
@@ -43,12 +49,24 @@ class Rocket:
     def current_acceleration(self):
         return math.hypot(self.ax, self.ay)
 
-    def update_physics(self, dt, inputhandler):
+    def update_physics(self, dt, inputhandler, particle_system):
 
         self.update_angle(inputhandler, dt)
         self.update_thrust(inputhandler, dt)
         self.update_accelaration()
         self.update_position(dt)
+
+        if inputhandler.stop_rocket:
+            self.vy = 0
+            self.vx = 0
+
+            self.ax = 0
+            self.ay = 0
+
+            self.angular_velocity = 0
+            self.angular_acceleration = 0
+
+            self.thrust = 0
 
     def update_position(self, dt):
         self.vy += self.ay * dt
@@ -104,9 +122,7 @@ class Rocket:
             self.emoji = EmojiDictionary.ROCKET_FACING_NORTH_WEST
 
     def update_accelaration(self):
-        theta = self.angle
-        dx = math.sin(theta)
-        dy = math.cos(theta)
+        dy,dx = self.get_thrust_direction()
         
         self.ax = self.thrust * dx
         self.ay = -(self.thrust * dy)
@@ -123,3 +139,29 @@ class Rocket:
             min(new_thrust, self.max_thrust),
             self.max_counter_thrust
         )
+
+    def get_thrust_direction(self):
+        theta = self.angle
+        dx = math.sin(theta)
+        dy = math.cos(theta)
+        
+        return(dy,dx)
+
+    def emit_exhaust(self, particle_system, dt, color_manager):
+        if self.thrust == 0:
+            return
+
+        dy,dx = self.get_thrust_direction()
+        vel_particle = -self.thrust
+        vy,vx = -(vel_particle * dy), vel_particle * dx
+
+        exhaust_y = self.y + dy
+        exhaust_x = self.x - dx
+        
+        self.exhaust_particle_accumulator += self.exhaust_rate * dt
+        
+        current_emission_particles = int(self.exhaust_particle_accumulator)
+
+        particle_system.emit(exhaust_y,exhaust_x, vy,vx, self.exhaust_lifetime, current_emission_particles, color_manager.exhaust)
+
+        self.exhaust_particle_accumulator -= current_emission_particles

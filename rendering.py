@@ -1,5 +1,4 @@
 import curses
-import time
 
 from camera import Camera
 from chunkmanager import CHUNK_SIZE, item_map
@@ -67,9 +66,7 @@ class Renderer:
         self.reprint_pad = True
 
 
-    def render_world(self, appstate):
-
-        COLOR_ROCKET = 1
+    def render_world(self, appstate, particle_system, color_manager):
         curses.update_lines_cols()
 
 
@@ -109,8 +106,8 @@ class Renderer:
             self.lastRenderCy = current_cy
             self.lastRenderCx = current_cx        
         
-            self.reprint_pad = False    
-
+            self.reprint_pad = False
+            
         pad_offset_y,pad_offset_x,screen_player_y,screen_player_x = self.camera.get_view_bounds(appstate,self)
 
         self.stdscr.erase()
@@ -123,19 +120,22 @@ class Renderer:
         0, 0,
         self.screen_h - 1, self.screen_w - 1
         )
-        
+
+        particle_system.render_particles(self)
+
         self.overlay.addstr(
             screen_player_y,
             screen_player_x,
             appstate.rocket.emoji,
-            curses.color_pair(COLOR_ROCKET) | curses.A_BOLD,
+            curses.color_pair(color_manager.rocket) | curses.A_BOLD,
         )
+
+
         self.overlay.overlay(self.stdscr)
         self.stdscr.noutrefresh()
         self.update_tele(appstate)
 
         curses.doupdate()
-
 
 
     def update_tele(self,appstate):
@@ -158,3 +158,4 @@ class Renderer:
 
         if new_h != self.screen_h or new_w != self.screen_w:
             self.resize_renderer(appstate)
+
