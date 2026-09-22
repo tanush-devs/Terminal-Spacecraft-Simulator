@@ -24,7 +24,7 @@ class ChunkManager:
     RADIUS_X = 10
     CLEANUP_INTERVAL = 5
 
-    def __init__(self, seed = 2009):
+    def __init__(self, seed):
         self.seed = seed
         self.chunks = {}
         self.modifications = {}

@@ -31,7 +31,7 @@ class Rocket:
         self.max_angular_velocity = 1
         self.angular_acceleration = 0
 
-        self.thrust = 100
+        self.thrust = 0
         self.Thrust_Buildup_Rate = 1
         self.Counter_Thrust_Buildup_Rate = 1
         self.max_thrust = 5
@@ -152,8 +152,8 @@ class Rocket:
             return
 
         dy,dx = self.get_thrust_direction()
-        vel_particle = -self.thrust
-        vy,vx = -(vel_particle * dy), vel_particle * dx
+        vel_particle = self.thrust
+        vy,vx = vel_particle * dy, -(vel_particle * dx)
 
         exhaust_y = self.y + dy
         exhaust_x = self.x - dx
@@ -162,6 +162,6 @@ class Rocket:
         
         current_emission_particles = int(self.exhaust_particle_accumulator)
 
-        particle_system.emit(exhaust_y,exhaust_x, vy,vx, self.exhaust_lifetime, current_emission_particles, color_manager.exhaust)
+        particle_system.emit(exhaust_y,exhaust_x, vy,vx, self.exhaust_lifetime, current_emission_particles, color_manager.exhaust, random_particles=True, chars=[" ."," •"," ˚"])
 
         self.exhaust_particle_accumulator -= current_emission_particles

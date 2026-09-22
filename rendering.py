@@ -17,7 +17,7 @@ class Renderer:
         self.lastRenderCx = None
         self.reprint_pad = True
 
-    def initialize_rendering(self,stdscr,appstate):
+    def initialize_rendering(self, stdscr, appstate, world):
         self.stdscr = stdscr
         height,width = stdscr.getmaxyx()
         self.screen_h = height
@@ -35,13 +35,13 @@ class Renderer:
         self.viewport = curses.newpad(pad_height,pad_width)
 
         tele_width = min(30,width)
-        tele_height = len(self.telementary.get_display_list(appstate,tele_width)) + 2
+        tele_height = len(self.telementary.get_display_list(appstate, world, tele_width)) + 2
         self.tele = curses.newpad(tele_height, tele_width)
         self.telementary.max_offset = max(0, tele_height - height)
 
         self.overlay = curses.newwin(height, width, 0, 0)
 
-    def resize_renderer(self,appstate):
+    def resize_renderer(self, appstate, world):
         height, width = self.stdscr.getmaxyx()
 
         self.screen_h = height
@@ -56,7 +56,7 @@ class Renderer:
         self.viewport.resize(pad_height, pad_width)
 
         tele_width = min(30,width)
-        tele_height = len(self.telementary.get_display_list(appstate,tele_width)) + 2
+        tele_height = len(self.telementary.get_display_list(appstate,world, tele_width)) + 2
         self.tele.clear()
         self.tele.resize(tele_height, tele_width)
         self.telementary.max_offset = max(0, tele_height - height)
@@ -66,15 +66,17 @@ class Renderer:
         self.reprint_pad = True
 
 
-    def render_world(self, appstate, particle_system, color_manager):
+    def render_world(self, appstate, particle_system, color_manager, world):
         curses.update_lines_cols()
 
-
-        chunk_mgr = appstate.chunk_manager
+        chunk_mgr = world.chunk_manager
         py, px = appstate.rocket.y , appstate.rocket.x
         current_cy, current_cx, *_ = chunk_mgr.world_to_chunk_coords(py, px)
 
-        self.process_resize(appstate)
+        world.check_region(py,px)
+        world.celestialbody_manager.process_celestialbodies(py,px)
+
+        self.process_resize(appstate, world)
 
         if not (self.lastRenderCy is None or self.lastRenderCx is None):
             delta_cy = current_cy - self.lastRenderCy
@@ -85,7 +87,7 @@ class Renderer:
 
         if self.reprint_pad:
             chunk_mgr.unload_inactive_chunks(current_cy,current_cx)
-            top_cy, left_cx, pad_height, chunks_wide = self.camera.get_pad_top_chunk(appstate, self)
+            top_cy, left_cx, pad_height, chunks_wide = self.camera.get_pad_top_chunk(appstate, self, world)
 
             for index, y in enumerate(range(pad_height)):
                 d_cy = y // CHUNK_SIZE
@@ -103,17 +105,21 @@ class Renderer:
                 except curses.error:  
                     pass  # Ignores the harmless bottom-right overflow error
 
+            world.celestialbody_manager.render_celestialbodies(self, top_cy,left_cx, self.pad_h,self.pad_w, py,px)            
+
             self.lastRenderCy = current_cy
             self.lastRenderCx = current_cx        
         
             self.reprint_pad = False
-            
+
         pad_offset_y,pad_offset_x,screen_player_y,screen_player_x = self.camera.get_view_bounds(appstate,self)
 
         self.stdscr.erase()
         self.overlay.erase()
 
         self.stdscr.noutrefresh()
+
+
 
         self.viewport.noutrefresh(
         pad_offset_y, pad_offset_x,
@@ -133,17 +139,17 @@ class Renderer:
 
         self.overlay.overlay(self.stdscr)
         self.stdscr.noutrefresh()
-        self.update_tele(appstate)
+        self.update_tele(appstate, world)
 
         curses.doupdate()
 
 
-    def update_tele(self,appstate):
+    def update_tele(self, appstate, world):
         tmt = self.tele
         height,width = tmt.getmaxyx()
         tmt.erase()
         tmt.box()
-        lis = self.telementary.get_display_list(appstate,width)
+        lis = self.telementary.get_display_list(appstate, world, width)
         for index,line in enumerate(lis):
             tmt.addstr(index+1,1, line)
 
@@ -153,9 +159,11 @@ class Renderer:
         min(height,self.screen_h - 1), min(30,width)
         )
 
-    def process_resize(self, appstate):
+    def process_resize(self, appstate, world):
         new_h,new_w = self.stdscr.getmaxyx()
 
         if new_h != self.screen_h or new_w != self.screen_w:
-            self.resize_renderer(appstate)
+            self.resize_renderer(appstate, world)
 
+    def print_celestial_bodies(self, world):
+        body = world.celestialbody

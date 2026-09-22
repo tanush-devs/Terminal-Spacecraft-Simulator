@@ -8,16 +8,24 @@ class Telementary:
         self.max_offset = 0
         self.scroll_offset = 0
     
-    def get_telementary_data(self,appstate):
+    def get_telementary_data(self, appstate, world):
         rocket = appstate.rocket
         
+        nearest_planet_dis = world.celestialbody_manager.nearest_body(rocket.y,rocket.x)
+        if nearest_planet_dis is None:
+            nearest_planet_dis = "Unknown"
+        else:
+            nearest_planet_dis = round(nearest_planet_dis,3)
         chunk_y, chunk_x, *_ = (
-        appstate.chunk_manager.world_to_chunk_coords(
+        world.chunk_manager.world_to_chunk_coords(
             rocket.y,
             rocket.x
         )
     )
         return {
+        "GAME": {
+            "FPS": appstate.current_fps
+        },
         "POSITION": {
             "X": round(rocket.x, 3),
             "Y": round(-rocket.y, 3),
@@ -45,10 +53,13 @@ class Telementary:
             "Thrust": round(rocket.thrust, 3),
             "Chunk": (chunk_x, -chunk_y),
         },
+        "PLANETS": {
+            "Nearest" : nearest_planet_dis
+        },
     }
 
-    def get_display_list(self,appstate,width):
-        data = self.get_telementary_data(appstate)
+    def get_display_list(self, appstate, world, width):
+        data = self.get_telementary_data(appstate, world)
         display_list = ["\t◈ TELEMETRY","─"*(width-2)]
         for section,fields in data.items():
             display_list.append(section)
