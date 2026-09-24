@@ -5,6 +5,7 @@ from appstate import AppState
 from colors import Colours
 from input_handler import InputHandler
 from particles import ParticleSystem
+from physics import Physics
 from rendering import Renderer
 from world import World
 
@@ -34,6 +35,7 @@ def main(stdscr):
     inputhandler = InputHandler(renderer)
     color_manager = Colours()
     world = World()
+    physics = Physics()
 
     renderer.initialize_rendering(stdscr, appstate, world)
     color_manager.initialize()
@@ -51,7 +53,7 @@ def main(stdscr):
         dt = current_time - prev_t
         prev_t = current_time
 
-        appstate.rocket.update_physics(dt, inputhandler, particle_system)
+        physics.calculate(appstate.rocket, world.celestialbody_manager, dt, inputhandler)
         world.celestialbody_manager.check_or_process_collision(appstate.rocket)
         appstate.rocket.emit_exhaust(particle_system, dt, color_manager)
         particle_system.update(dt)

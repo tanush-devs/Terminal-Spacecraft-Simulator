@@ -38,9 +38,9 @@ class CelestialBody:
     def get_dis(self, py,px):
         dis = math.sqrt((self.y - py)**2 + (self.x - px)**2)
         return dis
-    
+
     def is_colliding(self, py,px):
-        return self.get_dis(py,px) < self.radius
+        return self.get_dis(py,px) <= self.radius
 
 
 class CelestialBodyManager:
@@ -122,8 +122,7 @@ class CelestialBodyManager:
 
                     dx = rocket.x - body.x
                     dy = rocket.y - body.y
-                    
-                    
+
                     distance = math.sqrt(dx**2 + dy**2)
 
                     if distance == 0: 
@@ -138,10 +137,9 @@ class CelestialBodyManager:
                     vel_along_normal = (rocket.vx * nx) + (rocket.vy * ny)
 
                     if vel_along_normal < 0:
-
                         rocket.vx -= vel_along_normal * nx
                         rocket.vy -= vel_along_normal * ny
-                    
+
                     rocket.y = body.y + dj * body.radius
                     rocket.x = body.x + di * body.radius
 

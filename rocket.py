@@ -49,32 +49,6 @@ class Rocket:
     def current_acceleration(self):
         return math.hypot(self.ax, self.ay)
 
-    def update_physics(self, dt, inputhandler, particle_system):
-
-        self.update_angle(inputhandler, dt)
-        self.update_thrust(inputhandler, dt)
-        self.update_accelaration()
-        self.update_position(dt)
-
-        if inputhandler.stop_rocket:
-            self.vy = 0
-            self.vx = 0
-
-            self.ax = 0
-            self.ay = 0
-
-            self.angular_velocity = 0
-            self.angular_acceleration = 0
-
-            self.thrust = 0
-
-    def update_position(self, dt):
-        self.vy += self.ay * dt
-        self.vx += self.ax * dt
-
-        self.y += self.vy * dt
-        self.x += self.vx * dt
-
     def update_angle(self, inputhandler, dt):
         if inputhandler.rotate_right:
             # self. angle = (2*math.pi / 8)
@@ -121,17 +95,20 @@ class Rocket:
         elif (13*math.pi / 8) < self.angle < (15*math.pi / 8):
             self.emoji = EmojiDictionary.ROCKET_FACING_NORTH_WEST
 
-    def update_accelaration(self):
+    def get_thrust_acc(self):
         dy,dx = self.get_thrust_direction()
         
-        self.ax = self.thrust * dx
-        self.ay = -(self.thrust * dy)
+        ax = self.thrust * dx
+        ay = -(self.thrust * dy)
+
+        return(ay,ax)
 
     def update_thrust(self, inputhandler, dt):
         new_thrust = self.thrust
     
         if inputhandler.thrust_increase:
             new_thrust += self.Thrust_Buildup_Rate * dt
+
         if inputhandler.thrust_decrease:
             new_thrust -= self.Counter_Thrust_Buildup_Rate * dt
 
