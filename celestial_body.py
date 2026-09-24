@@ -3,10 +3,11 @@ import math
 import random
 import time
 
+import physics
 from chunkmanager import CHUNK_SIZE
 from colors import PLANET_COLORS
 
-REGION_SIZE = 2500
+REGION_SIZE = 2000
 
 class CelestialBody:
     def __init__(self, y,x, radius, mass, color=30):
@@ -27,7 +28,7 @@ class CelestialBody:
         end_y   = min(self.y + self.radius, bottom_y)
 
         planet_dict = {}
-        
+
         for y in range(start_y, end_y + 1):
             half_chord = math.sqrt(self.radius**2 - abs(y - self.y)**2)
             chord_l = min(self.x + half_chord, right_x) - max(self.x - half_chord,left_x)
@@ -42,6 +43,21 @@ class CelestialBody:
     def is_colliding(self, py,px):
         return self.get_dis(py,px) <= self.radius
 
+    def get_gravity_acc(self, py,px):
+        r = self.get_dis(py,px)
+        r = max(r, 1)
+        
+        g = (physics.G * self.mass) / r**3   # divide vector by r to get unit vector later
+        
+        dy = self.y - py
+        dx = self.x - px
+
+        ay = g * dy
+        ax = g * dx
+        
+        return(ay,ax)
+
+
 
 class CelestialBodyManager:
     LOADED_DIS = 5000
@@ -52,17 +68,18 @@ class CelestialBodyManager:
         self.current_region = None
         self.region_changed = False
         self.last_update = time.perf_counter()
+        self.tmp = time.perf_counter()
 
-    def add(self, y,x, radius, mass, color):
+    def add(self, y,x, radius, mass, color=32):
         self.celestialbodies[y,x] = (CelestialBody(y,x, radius, mass, color))
 
-    def generate_celestial_body(self):
+    def generate_celestial_body(self, region):
         if self.current_region is None:
             return
-        
+
         planet_exists = False
 
-        rng = random.Random(hash((self.seed, self.current_region)))
+        rng = random.Random(hash((self.seed, region)))
         roll = rng.random()
         if roll < 0.5:
             planet_exists = True
@@ -73,7 +90,7 @@ class CelestialBodyManager:
             body_y = self.current_region[0] * REGION_SIZE + rng.randint(0, REGION_SIZE-250)
             body_x = self.current_region[1] * REGION_SIZE + rng.randint(0, REGION_SIZE - 250)
 
-            radius = rng.randint(20, 60)
+            radius = rng.randint(40, 80)
             density = rng.uniform(0.5,1.5)
 
             mass = density * (4/3) * math.pi * radius**3
@@ -84,7 +101,8 @@ class CelestialBodyManager:
 
     def process_celestialbodies(self, py,px):
         if self.region_changed:
-            self.generate_celestial_body()
+            self.load_new_region()
+            self.region_changed = False
 
         if self.last_update > 1:
             self.celestialbodies = {key: body for key,body in self.celestialbodies.items() if (body.y - py)**2 + (body.x - px)**2 < self.LOADED_DIS**2 and (body.y*REGION_SIZE,body.x*REGION_SIZE) != self.current_region}
@@ -143,3 +161,76 @@ class CelestialBodyManager:
                     rocket.y = body.y + dj * body.radius
                     rocket.x = body.x + di * body.radius
 
+    def get_net_gravitational_acc(self, rocket):
+        net_ay = 0
+        net_ax = 0
+        
+        for body in self.celestialbodies.values():
+            ay,ax = body.get_gravity_acc(rocket.y, rocket.x)
+
+            net_ay += ay
+            net_ax += ax
+
+        return(net_ay,net_ax)
+    
+    def teleport_to_body(self, rocket):
+        body = random.choice(list(self.celestialbodies.values()))
+
+        rocket.y = body.y
+        rocket.x = body.x
+        
+    def initialize_bodies(self):
+        if self.current_region is None:
+            return
+
+        ry,rx = self.current_region
+        
+        all_req_regions = [
+            (ry,rx),
+            (ry-1,rx),
+            (ry+1,rx),
+            (ry,rx-1),
+            (ry,rx+1),
+            (ry+1,rx+1),
+            (ry-1,rx-1),
+            (ry+1,rx-1),
+            (ry-1,rx+1),
+        ]
+
+        for region in all_req_regions:
+            self.generate_celestial_body(region)
+
+    def load_new_region(self):
+        print(f"Triggered again after: {time.perf_counter() - self.tmp}")
+        print(f"New region: {self.current_region}")
+        st = time.perf_counter()
+        if self.current_region is None:
+            return
+
+        ry,rx = self.current_region
+        all_surr_regions = [
+            (ry,rx),
+            (ry-1,rx),
+            (ry+1,rx),
+            (ry,rx-1),
+            (ry,rx+1),
+            (ry+1,rx+1),
+            (ry-1,rx-1),
+            (ry+1,rx-1),
+            (ry-1,rx+1),
+        ]
+        
+        req_regions = [
+    (ry, rx)
+    for ry, rx in all_surr_regions
+    if (ry, rx) not in [
+        (math.floor(cy / REGION_SIZE), math.floor(cx / REGION_SIZE))
+        for cy, cx in self.celestialbodies
+    ]
+]
+        print(f"Time taken for calc: {time.perf_counter() - st}")
+        for region in req_regions:
+            self.generate_celestial_body(region)
+        print(f"Total taken: {time.perf_counter() - st}")
+        
+        self.tmp = time.perf_counter()

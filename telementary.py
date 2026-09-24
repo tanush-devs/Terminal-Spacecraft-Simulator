@@ -10,7 +10,7 @@ class Telementary:
     
     def get_telementary_data(self, appstate, world):
         rocket = appstate.rocket
-        
+
         nearest_planet_dis = world.celestialbody_manager.nearest_body(rocket.y,rocket.x)
         if nearest_planet_dis is None:
             nearest_planet_dis = "Unknown"
@@ -54,7 +54,8 @@ class Telementary:
             "Chunk": (chunk_x, -chunk_y),
         },
         "PLANETS": {
-            "Nearest" : nearest_planet_dis
+            "Nearest" : nearest_planet_dis,
+            "Total": len(world.celestialbody_manager.celestialbodies)
         },
     }
 

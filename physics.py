@@ -1,15 +1,19 @@
+G = 0.006
+
+
 class Physics:
     
     def calculate(self, rocket, celestialbody_manager, dt, inputhandler):
         rocket.update_angle(inputhandler, dt)
         rocket.update_thrust(inputhandler, dt)
-        R_ay,R_ax = rocket.get_thrust_acc()
-
-        rocket.ay = R_ay
-        rocket.ax = R_ax
+        self.update_acc(rocket, celestialbody_manager)
 
         self.update_position(rocket, dt)
+
         self.stop_rocket(rocket, inputhandler)
+        
+        if inputhandler.teleport_body:
+            celestialbody_manager.teleport_to_body(rocket)
 
 
     def update_position(self, rocket, dt):
@@ -18,6 +22,16 @@ class Physics:
 
         rocket.y += rocket.vy * dt
         rocket.x += rocket.vx * dt
+
+
+    def update_acc(self, rocket, celestialbody_manager):
+        R_ay, R_ax = rocket.get_thrust_acc()
+        C_ay, C_ax = celestialbody_manager.get_net_gravitational_acc(rocket)
+
+        rocket.ay = R_ay + C_ay
+        rocket.ax = R_ax + C_ax
+
+
 
     def stop_rocket(self, rocket, inputhandler):
         if inputhandler.stop_rocket:
@@ -31,3 +45,4 @@ class Physics:
             rocket.angular_acceleration = 0
 
             rocket.thrust = 0
+            

@@ -53,4 +53,3 @@ PLANET_COLORS = [
     (36, "Storm Grey",   600, 600, 600, curses.COLOR_WHITE),
     (37, "Slate Teal",   200, 600, 600, curses.COLOR_CYAN),
 ]
-        

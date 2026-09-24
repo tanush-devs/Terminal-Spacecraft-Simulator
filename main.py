@@ -36,10 +36,12 @@ def main(stdscr):
     color_manager = Colours()
     world = World()
     physics = Physics()
+    
 
     renderer.initialize_rendering(stdscr, appstate, world)
     color_manager.initialize()
     color_manager.init_planet_palette()
+    world.initialize_world(appstate.rocket.y,appstate.rocket.x)
 
     FRAME_BUDGET = 1 / appstate.target_fps
     inputhandler.poll_action()

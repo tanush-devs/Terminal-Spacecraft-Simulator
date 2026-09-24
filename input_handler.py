@@ -11,6 +11,7 @@ class InputHandler:
         self.keyboard_listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
         self.mouse_listener = mouse.Listener(on_scroll= renderer.telementary.scroll)
         self.stop_rocket = False
+        self.teleport_body = False
 
 
     def poll_action(self):
@@ -33,7 +34,10 @@ class InputHandler:
 
         if getattr(key, 'char', None) in ['l','L']:
             self.stop_rocket = True
-            
+
+        if getattr(key, 'char', None) in ['t','T']:
+            self.teleport_body = True
+
 
         if key == keyboard.Key.esc:
             self.game_is_running = False
@@ -53,6 +57,9 @@ class InputHandler:
 
         if getattr(key, 'char', None) in ['l','L']:
             self.stop_rocket = False
+
+        if getattr(key, 'char', None) in ['t','T']:
+            self.teleport_body = False
 
         if key == keyboard.Key.esc:
             self.game_is_running = False

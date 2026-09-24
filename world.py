@@ -16,3 +16,8 @@ class World:
         if self.celestialbody_manager.current_region != celestial_region:
             self.celestialbody_manager.region_changed = True
             self.celestialbody_manager.current_region = celestial_region
+
+    def initialize_world(self, py,px):
+        self.celestialbody_manager.current_region = (floor(py / REGION_SIZE), floor(px / REGION_SIZE))
+
+        self.celestialbody_manager.initialize_bodies()
